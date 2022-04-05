@@ -2,24 +2,11 @@
 import * as XLSX from 'https://deno.land/x/sheetjs/xlsx.mjs'
 import { DateTime } from 'https://esm.sh/luxon';
 import './polyfill.ts'
-import ical from 'https://esm.sh/ical-generator?no-check';
+import {AutoMap, Event} from './lib.ts'
 
 const xlsx = XLSX.readFile(Deno.args[0])
 
 const sheet = xlsx.Sheets[xlsx.SheetNames[0]]
-
-class AutoMap<K, V> extends Map<K, V> {
-    constructor(public generator: (key: K) => V) {
-        super()
-    }
-
-    get(key: K): V {
-        if(!this.has(key)) {
-            this.set(key, this.generator(key))
-        }
-        return super.get(key)!
-    }
-}
 
 const cellnames = Object.keys(sheet).filter(key => !key.startsWith('!'))
 
@@ -28,12 +15,6 @@ const cellvalues = cellnames.reduce((values, cellname) => {
     values.get(colname.charCodeAt(0) - "A".charCodeAt(0)).set(parseInt(rowname)-1, sheet[cellname].v)
     return values
 }, new AutoMap((_: number) => new AutoMap((_: number) => '' as unknown)))
-
-interface Event {
-    start: string,
-    end: string,
-    summary: string
-}
 
 const entries: Event[] = []
 
@@ -74,6 +55,4 @@ for(const [rowname, cell] of cellvalues.get(1).entries()) {
     }
 }
 
-const cal = ical({ events: entries })
-
-console.log(cal.toString())
+console.log(JSON.stringify(entries))
