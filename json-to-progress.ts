@@ -12,11 +12,16 @@ for(const entry of entries) {
     sorted.get(entry.summary).push(entry)
 }
 
-const progress = (num: number) => `[${'='.repeat(num * 10).padEnd(10, ' ')}]`
-
-for(const [summary, entries] of sorted.entries()) {
+const progressbar = (num: number) => `[${'='.repeat(num * 10).padEnd(10, ' ')}]`
+const progressline = (summary: string, entries: Event[]) => {
     const past = entries.filter(entry => DateTime.fromISO(entry.start).diffNow().as('minutes') <= 0).reduce((sum, current) => sum + DateTime.fromISO(current.end).diff(DateTime.fromISO(current.start)).as('minutes'), 0)
     const future = entries.filter(entry => DateTime.fromISO(entry.start).diffNow().as('minutes') > 0).reduce((sum, current) => sum + DateTime.fromISO(current.end).diff(DateTime.fromISO(current.start)).as('minutes'), 0)
     const total = past + future
-    console.log(progress(past / total), `${Math.round((past / total)*100)}%`.padStart(4, ' '), summary, `(${past}min/${total}min)`)
+    return `${progressbar(past / total)} ${Math.round((past / total)*100).toString().padStart(3, ' ')}% ${summary} (${past}min/${total}min)`
 }
+
+for(const [summary, entries] of sorted.entries()) {
+    console.log(progressline(summary, entries))
+}
+console.log('------------------------------------------')
+console.log(progressline('Total', entries))
