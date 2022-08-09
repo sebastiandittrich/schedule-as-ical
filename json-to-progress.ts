@@ -1,15 +1,14 @@
-import { DateTime } from 'https://esm.sh/luxon';
+import { DateTime } from 'https://esm.sh/luxon@3.0.1';
 import {AutoMap, Event} from './lib.ts'
 
 const entries = (JSON.parse(new TextDecoder("utf-8").decode(Deno.readFileSync(Deno.args[0]))) as Event[])
-    .filter(event => !event.summary.startsWith('NKL'))
-    .filter(event => !event.summary.startsWith('Klausur'))
-    .filter(event => !['Himmelfahrt', 'Pfingsten', 'Ostermontag', 'Karfreitag'].includes(event.summary))
+    .filter(event => !event.name.startsWith('NKL'))
+    .filter(event => !event.name.startsWith('Klausur'))
 
 const sorted = new AutoMap((_: string) => [] as Event[])
 
 for(const entry of entries) {
-    sorted.get(entry.summary).push(entry)
+    sorted.get(entry.name).push(entry)
 }
 
 const progressbar = (num: number) => `[${'='.repeat(num * 10).padEnd(10, ' ')}]`

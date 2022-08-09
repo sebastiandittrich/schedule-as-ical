@@ -1,7 +1,7 @@
 export interface Event {
     start: string,
     end: string,
-    summary: string
+    name: string
 }
 
 export class AutoMap<K, V> extends Map<K, V> {
@@ -14,5 +14,9 @@ export class AutoMap<K, V> extends Map<K, V> {
             this.set(key, this.generator(key))
         }
         return super.get(key)!
+    }
+
+    toMap() {
+        return new Map(this)
     }
 }
