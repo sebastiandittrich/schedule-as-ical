@@ -1,19 +1,17 @@
-
-// @deno-types="https://deno.land/x/sheetjs@v0.18.3/types/index.d.ts"
-import * as XLSX from 'https://deno.land/x/sheetjs@v0.18.3/xlsx.mjs'
-import { DateTime } from 'https://esm.sh/luxon@3.0.1';
-import './polyfill.ts'
-import {AutoMap, Event} from './lib.ts'
+import * as XLSX from 'xlsx'
+import { DateTime } from 'luxon';
+import {AutoMap, Event} from './lib'
 
 const timeRegex = /[0-9][0-9]?:[0-9][0-9]-[0-9][0-9]?:[0-9][0-9]/
 
+export function excelToJson(xlsx: XLSX.WorkBook) {
+    const sheet = xlsx.Sheets[xlsx.SheetNames[0]]
+    const sheetMap = sheetToMap(sheet)
+    const plan = mapToPlan(sheetMap)
 
-const xlsx = XLSX.readFile(Deno.args[0])
-const sheet = xlsx.Sheets[xlsx.SheetNames[0]]
-const sheetMap = sheetToMap(sheet)
-const plan = mapToPlan(sheetMap)
+    return plan
+}
 
-console.log(JSON.stringify(plan))
 
 // Read time from string like "14:00" into { hour: 14, minute: 0 }
 function parseTime(time: string) {
