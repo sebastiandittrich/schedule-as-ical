@@ -2,7 +2,7 @@
     "name": "rebuild",
     "version": "1.0.0",
     "description": "Rebuild.",
-    "main": "index.js",
+    "main": "ical-function.js",
     "dependencies": {
         "@types/node": "^18.7.16",
         "ical-generator": "^3.5.1",
