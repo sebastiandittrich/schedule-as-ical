@@ -2,7 +2,7 @@ packages:
   - name: schedule-as-ical
     actions:
       - name: livecalendar
-        main: "index.js"
+        main: ""
         runtime: "nodejs:18"
         web: true
         environment:

@@ -1,6 +1,6 @@
 require('ts-node').register({})
 
-module.exports = () => {
+exports.main = () => {
     return { body: "Works" };
     // require('./index.ts')
 }
