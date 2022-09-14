@@ -1,3 +1,5 @@
 require('ts-node').register({})
 
-require('./index.ts')
+module.exports = () => {
+    require('./index.ts')
+}
