@@ -10,7 +10,7 @@ const promises_1 = require("stream/promises");
 const fs_1 = require("fs");
 const luxon_1 = require("luxon");
 async function main() {
-    const ical = cache('ical', 60 * 60, async () => {
+    const ical = await cache('ical', 60 * 60, async () => {
         console.log('not cached');
         await fetchFile('./__downloaded_plan.xlsx');
         const plan = (0, excel_to_json_1.excelToJson)((0, xlsx_1.readFile)('./__downloaded_plan.xlsx'));

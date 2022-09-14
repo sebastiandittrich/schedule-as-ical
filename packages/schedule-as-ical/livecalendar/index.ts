@@ -9,7 +9,7 @@ import { IncomingMessage } from 'http';
 import { DateTime } from 'luxon'
 
 export async function main() {
-    const ical = cache('ical', 60*60, async () => {
+    const ical = await cache('ical', 60*60, async () => {
         console.log('not cached')
         await fetchFile('./__downloaded_plan.xlsx')
 
