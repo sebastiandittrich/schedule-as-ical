@@ -4,10 +4,39 @@ import { planToIcal } from './json-to-ical'
 import fetch from "node-fetch";
 import { get as _get } from 'https';
 import { pipeline } from 'stream/promises';
-import { createWriteStream } from 'fs';
+import { createWriteStream, existsSync, readFileSync, writeFile, writeFileSync } from 'fs';
 import { IncomingMessage } from 'http';
+import { DateTime } from 'luxon'
 
 export async function main() {
+    const ical = cache('ical', 60*60, async () => {
+        console.log('not cached')
+        await fetchFile('./__downloaded_plan.xlsx')
+
+        const plan = excelToJson(readFile('./__downloaded_plan.xlsx'))
+        const ical = planToIcal(plan)
+        return ical
+    })
+
+    return { body: ical }
+}
+
+async function cache<T>(name: string, durationInSeconds: number, generator: () => T) {
+    const filename = `./__cache_${name}`
+    if(existsSync(filename)) {
+        const content = readFileSync(filename).toString('utf-8')
+        const {data, writtenAt} = JSON.parse(content)
+        if(DateTime.fromISO(writtenAt).plus({seconds: durationInSeconds}) > DateTime.now()) {
+            return data
+        }
+    }
+    const data = await generator()
+    const writtenAt = DateTime.now().toISO()
+    writeFileSync(filename, JSON.stringify({ writtenAt, data }))
+    return data
+}
+
+async function fetchFile(filename: string) {
     const get = (url: string) => new Promise<IncomingMessage>((res) => _get(url, res));
 
     const cookieRes = await get(process.env.SHARE_URL as string)
@@ -22,15 +51,5 @@ export async function main() {
 
     if (!res.ok) throw new Error(`unexpected response ${res.statusText}`);
 
-    await pipeline(res.body, createWriteStream('./__downloaded_plan.xlsx'));
-
-    const plan = excelToJson(readFile('./__downloaded_plan.xlsx'))
-    const ical = planToIcal(plan)
-
-    return { body: ical }
-}
-
-function test() {
-
-
+    await pipeline(res.body, createWriteStream(filename));
 }
