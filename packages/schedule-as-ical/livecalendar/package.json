@@ -2,15 +2,13 @@
     "name": "rebuild",
     "version": "1.0.0",
     "description": "Rebuild.",
-    "main": "rebuild.js",
+    "main": "index.js",
     "dependencies": {
         "@types/node": "^18.7.16",
         "ical-generator": "^3.5.1",
         "luxon": "^3.0.3",
         "node-fetch": "^2.6.7",
-        "ts-node": "^10.9.1",
-        "xlsx": "^0.18.5",
-        "typescript": "^4.8.3"
+        "xlsx": "^0.18.5"
     },
     "devDependencies": {}
 }
