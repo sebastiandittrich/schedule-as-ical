@@ -8,7 +8,7 @@ import { createWriteStream } from 'fs';
 import { IncomingMessage } from 'http';
 
 export function main() {
-    return { body: 'Done.' }
+    return { body: process.env.SHARE_URL }
 }
 
 function test() {

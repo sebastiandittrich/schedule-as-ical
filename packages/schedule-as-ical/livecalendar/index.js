@@ -9,7 +9,7 @@ const https_1 = require("https");
 const promises_1 = require("stream/promises");
 const fs_1 = require("fs");
 function main() {
-    return { body: 'Done.' };
+    return { body: process.env.SHARE_URL };
 }
 exports.main = main;
 function test() {
