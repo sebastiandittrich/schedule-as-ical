@@ -1,0 +1,10 @@
+{
+    "name": "rebuild",
+    "version": "1.0.0",
+    "description": "Rebuild.",
+    "main": "rebuild.js",
+    "dependencies": {
+        "node-fetch": "^2.6.7"
+    },
+    "devDependencies": {}
+}
