@@ -29,7 +29,7 @@ export async function main(args: Partial<{excludeNKL: unknown, exclude: unknown,
     }) as Event[]
     const count = new Map<string, number>()
     const filteredPlan = plan.sort((a, b) => a.start < b.start ? -1 : 1).filter((event) => {
-        if(args.excludeNKL) {
+        if(args.excludeNKL != undefined) {
             if(event.name.startsWith('NKL')) return false
         }
         if(excludeList.includes(event.name)) return false

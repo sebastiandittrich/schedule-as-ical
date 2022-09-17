@@ -28,7 +28,7 @@ async function main(args = {}) {
     });
     const count = new Map();
     const filteredPlan = plan.sort((a, b) => a.start < b.start ? -1 : 1).filter((event) => {
-        if (args.excludeNKL) {
+        if (args.excludeNKL != undefined) {
             if (event.name.startsWith('NKL'))
                 return false;
         }
