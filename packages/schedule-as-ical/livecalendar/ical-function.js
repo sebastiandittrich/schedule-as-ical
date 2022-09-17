@@ -9,9 +9,8 @@ const https_1 = require("https");
 const promises_1 = require("stream/promises");
 const fs_1 = require("fs");
 const luxon_1 = require("luxon");
-async function main(args) {
-    const ical = await cache('ical', 60 * 60, async () => {
-        console.log('not cached');
+async function main(args = {}) {
+    const ical = await cache(JSON.stringify(args), 60 * 60, async () => {
         await fetchFile('./__downloaded_plan.xlsx');
         const plan = (0, excel_to_json_1.excelToJson)((0, xlsx_1.readFile)('./__downloaded_plan.xlsx')).filter((event) => {
             if (args.excludeNKL) {
@@ -27,17 +26,21 @@ async function main(args) {
 }
 exports.main = main;
 async function cache(name, durationInSeconds, generator) {
-    const filename = `./__cache_${name}`;
+    const filename = `./__cache.json`;
+    let cache = {};
     if ((0, fs_1.existsSync)(filename)) {
         const content = (0, fs_1.readFileSync)(filename).toString('utf-8');
-        const { data, writtenAt } = JSON.parse(content);
+        cache = JSON.parse(content);
+    }
+    if (cache[name]) {
+        const { writtenAt, data } = cache[name];
         if (luxon_1.DateTime.fromISO(writtenAt).plus({ seconds: durationInSeconds }) > luxon_1.DateTime.now()) {
             return data;
         }
     }
     const data = await generator();
     const writtenAt = luxon_1.DateTime.now().toISO();
-    (0, fs_1.writeFileSync)(filename, JSON.stringify({ writtenAt, data }));
+    (0, fs_1.writeFileSync)(filename, JSON.stringify({ ...cache, [name]: { writtenAt, data } }));
     return data;
 }
 async function fetchFile(filename) {

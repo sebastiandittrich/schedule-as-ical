@@ -1,4 +1,4 @@
 node_modules
 dist
 __downloaded_plan.xlsx
-__cache_ical
+__cache.json

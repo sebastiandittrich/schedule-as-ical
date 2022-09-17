@@ -8,9 +8,8 @@ import { createWriteStream, existsSync, readFileSync, writeFile, writeFileSync }
 import { IncomingMessage } from 'http';
 import { DateTime } from 'luxon'
 
-export async function main(args: Partial<{excludeNKL: boolean}>) {
-    const ical = await cache('ical', 60*60, async () => {
-        console.log('not cached')
+export async function main(args: Partial<{excludeNKL: boolean}> = {}) {
+    const ical = await cache(JSON.stringify(args), 60*60, async () => {
         await fetchFile('./__downloaded_plan.xlsx')
 
         const plan = excelToJson(readFile('./__downloaded_plan.xlsx')).filter((event) => {
@@ -27,17 +26,21 @@ export async function main(args: Partial<{excludeNKL: boolean}>) {
 }
 
 async function cache<T>(name: string, durationInSeconds: number, generator: () => T) {
-    const filename = `./__cache_${name}`
+    const filename = `./__cache.json`
+    let cache = {}
     if(existsSync(filename)) {
         const content = readFileSync(filename).toString('utf-8')
-        const {data, writtenAt} = JSON.parse(content)
+        cache = JSON.parse(content)
+    }
+    if(cache[name]) {
+        const {writtenAt, data} = cache[name]
         if(DateTime.fromISO(writtenAt).plus({seconds: durationInSeconds}) > DateTime.now()) {
             return data
         }
     }
     const data = await generator()
     const writtenAt = DateTime.now().toISO()
-    writeFileSync(filename, JSON.stringify({ writtenAt, data }))
+    writeFileSync(filename, JSON.stringify({ ...cache, [name]: { writtenAt, data } }))
     return data
 }
 
