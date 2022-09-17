@@ -1,2 +1,2 @@
 console.log(process.env.SHARE_URL)
-require('./ical-function.js').main()
+require('./ical-function.js').main({excludeNKL: true}).then((res) => console.log(res.body))

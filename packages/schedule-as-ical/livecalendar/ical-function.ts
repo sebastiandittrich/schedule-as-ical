@@ -10,6 +10,7 @@ import { DateTime } from 'luxon'
 import { Event } from './lib';
 
 export async function main(args: Partial<{excludeNKL: unknown, exclude: unknown, onlynth: unknown}> = {}) {
+    console.log(args)
     const excludeList = []
     const nthMap = new Map<string, number>()
     if(args.exclude && typeof args.exclude == 'string') {
