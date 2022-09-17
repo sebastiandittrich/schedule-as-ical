@@ -11,23 +11,37 @@ const fs_1 = require("fs");
 const luxon_1 = require("luxon");
 async function main(args = {}) {
     const excludeList = [];
+    const nthMap = new Map();
     if (args.exclude && typeof args.exclude == 'string') {
         excludeList.push(...args.exclude.split(','));
     }
-    const ical = await cache(JSON.stringify(args), 60 * 60, async () => {
-        await fetchFile('./__downloaded_plan.xlsx');
-        const plan = (0, excel_to_json_1.excelToJson)((0, xlsx_1.readFile)('./__downloaded_plan.xlsx')).filter((event) => {
-            if (args.excludeNKL) {
-                if (event.name.startsWith('NKL'))
-                    return false;
-            }
-            if (excludeList.includes(event.name))
-                return false;
-            return true;
+    if (args.onlynth && typeof args.onlynth == 'string') {
+        args.onlynth.split(',').map(entry => {
+            const splitted = entry.split(':');
+            nthMap.set(splitted[0], parseInt(splitted[1]));
         });
-        const ical = (0, json_to_ical_1.planToIcal)(plan);
-        return ical;
+    }
+    const plan = await cache('plan', 60 * 60, async () => {
+        await fetchFile('./__downloaded_plan.xlsx');
+        return (0, excel_to_json_1.excelToJson)((0, xlsx_1.readFile)('./__downloaded_plan.xlsx'));
     });
+    const count = new Map();
+    const filteredPlan = plan.filter((event) => {
+        if (args.excludeNKL) {
+            if (event.name.startsWith('NKL'))
+                return false;
+        }
+        if (excludeList.includes(event.name))
+            return false;
+        if (nthMap.has(event.name)) {
+            count.set(event.name, (count.get(event.name) || 0) + 1);
+            if (count.get(event.name) != nthMap.get(event.name))
+                return false;
+        }
+        return true;
+    });
+    const ical = (0, json_to_ical_1.planToIcal)(filteredPlan);
+    return ical;
     return { body: ical };
 }
 exports.main = main;
