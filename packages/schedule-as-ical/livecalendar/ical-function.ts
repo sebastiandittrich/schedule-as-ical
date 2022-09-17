@@ -7,6 +7,7 @@ import { pipeline } from 'stream/promises';
 import { createWriteStream, existsSync, readFileSync, writeFile, writeFileSync } from 'fs';
 import { IncomingMessage } from 'http';
 import { DateTime } from 'luxon'
+import { Event } from './lib';
 
 export async function main(args: Partial<{excludeNKL: unknown, exclude: unknown, onlynth: unknown}> = {}) {
     const excludeList = []
@@ -24,9 +25,9 @@ export async function main(args: Partial<{excludeNKL: unknown, exclude: unknown,
         await fetchFile('./__downloaded_plan.xlsx')
 
         return excelToJson(readFile('./__downloaded_plan.xlsx'))
-    })
+    }) as Event[]
     const count = new Map<string, number>()
-    const filteredPlan = plan.filter((event) => {
+    const filteredPlan = plan.sort().filter((event) => {
         if(args.excludeNKL) {
             if(event.name.startsWith('NKL')) return false
         }
