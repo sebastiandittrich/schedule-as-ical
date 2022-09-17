@@ -10,6 +10,10 @@ const promises_1 = require("stream/promises");
 const fs_1 = require("fs");
 const luxon_1 = require("luxon");
 async function main(args = {}) {
+    const excludeList = [];
+    if (args.exclude && typeof args.exclude == 'string') {
+        excludeList.push(...args.exclude.split(','));
+    }
     const ical = await cache(JSON.stringify(args), 60 * 60, async () => {
         await fetchFile('./__downloaded_plan.xlsx');
         const plan = (0, excel_to_json_1.excelToJson)((0, xlsx_1.readFile)('./__downloaded_plan.xlsx')).filter((event) => {
@@ -17,6 +21,8 @@ async function main(args = {}) {
                 if (event.name.startsWith('NKL'))
                     return false;
             }
+            if (excludeList.includes(event.name))
+                return false;
             return true;
         });
         const ical = (0, json_to_ical_1.planToIcal)(plan);

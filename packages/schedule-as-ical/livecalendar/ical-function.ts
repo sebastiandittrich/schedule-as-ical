@@ -8,7 +8,11 @@ import { createWriteStream, existsSync, readFileSync, writeFile, writeFileSync }
 import { IncomingMessage } from 'http';
 import { DateTime } from 'luxon'
 
-export async function main(args: Partial<{excludeNKL: boolean}> = {}) {
+export async function main(args: Partial<{excludeNKL: unknown, exclude: unknown}> = {}) {
+    const excludeList = []
+    if(args.exclude && typeof args.exclude == 'string') {
+        excludeList.push(...args.exclude.split(','))
+    }
     const ical = await cache(JSON.stringify(args), 60*60, async () => {
         await fetchFile('./__downloaded_plan.xlsx')
 
@@ -16,6 +20,7 @@ export async function main(args: Partial<{excludeNKL: boolean}> = {}) {
             if(args.excludeNKL) {
                 if(event.name.startsWith('NKL')) return false
             }
+            if(excludeList.includes(event.name)) return false
             return true
         })
         const ical = planToIcal(plan)
