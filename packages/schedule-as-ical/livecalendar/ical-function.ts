@@ -38,7 +38,6 @@ export async function main(args: Partial<{excludeNKL: unknown, exclude: unknown,
         return true
     })
     const ical = planToIcal(filteredPlan)
-    return ical
 
     return { body: ical }
 }

@@ -41,7 +41,6 @@ async function main(args = {}) {
         return true;
     });
     const ical = (0, json_to_ical_1.planToIcal)(filteredPlan);
-    return ical;
     return { body: ical };
 }
 exports.main = main;
