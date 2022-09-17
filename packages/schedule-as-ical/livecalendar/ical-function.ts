@@ -27,7 +27,7 @@ export async function main(args: Partial<{excludeNKL: unknown, exclude: unknown,
         return excelToJson(readFile('./__downloaded_plan.xlsx'))
     }) as Event[]
     const count = new Map<string, number>()
-    const filteredPlan = plan.sort().filter((event) => {
+    const filteredPlan = plan.sort((a, b) => a.start < b.start ? -1 : 1).filter((event) => {
         if(args.excludeNKL) {
             if(event.name.startsWith('NKL')) return false
         }

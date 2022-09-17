@@ -26,7 +26,7 @@ async function main(args = {}) {
         return (0, excel_to_json_1.excelToJson)((0, xlsx_1.readFile)('./__downloaded_plan.xlsx'));
     });
     const count = new Map();
-    const filteredPlan = plan.sort().filter((event) => {
+    const filteredPlan = plan.sort((a, b) => a.start < b.start ? -1 : 1).filter((event) => {
         if (args.excludeNKL) {
             if (event.name.startsWith('NKL'))
                 return false;
