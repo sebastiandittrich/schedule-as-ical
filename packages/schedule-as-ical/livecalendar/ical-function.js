@@ -9,6 +9,7 @@ const https_1 = require("https");
 const promises_1 = require("stream/promises");
 const fs_1 = require("fs");
 const luxon_1 = require("luxon");
+const SCHEDULE_FILENAME = 'Leibniz-FH/Stundenpl%C3%A4ne/IT-Security/dIT%202020-23/Stundenplan%205%20Sem_dIT20.xlsx';
 async function main(args = {}) {
     console.log(args);
     const excludeList = [];
@@ -67,7 +68,8 @@ async function fetchFile(filename) {
     const get = (url) => new Promise((res) => (0, https_1.get)(url, res));
     const cookieRes = await get(process.env.SHARE_URL);
     const cookies = cookieRes.headers['set-cookie'].map(cookie => cookie.split(';')[0]).join('; ');
-    const res = await (0, node_fetch_1.default)("https://leibnizfh-my.sharepoint.com/personal/la_leibniz-fh_de/_api/files('Leibniz-FH/Stundenpl%C3%A4ne/IT-Security/dIT%202020-23/Stundenplanung_5Sem_dIT20.xlsx')/$value", {
+    const url = `https://leibnizfh-my.sharepoint.com/personal/la_leibniz-fh_de/_api/files('${SCHEDULE_FILENAME}')/$value`;
+    const res = await (0, node_fetch_1.default)(url, {
         headers: {
             "Cookie": cookies
         }
