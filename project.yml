@@ -1,9 +1,0 @@
-packages:
-  - name: schedule-as-ical
-    actions:
-      - name: livecalendar
-        main: ""
-        runtime: "nodejs:18"
-        web: true
-        environment:
-          SHARE_URL: "${SHARE_URL}"
