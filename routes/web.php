@@ -63,7 +63,7 @@ function get_name_from_cell(Cell $cell)
     }
 
     // Trim Newlines and trailing semicolons
-    $name = Str::of($name)->trim()->trim(';')->toString();
+    $name = Str::of($name)->trim('\n ;')->toString();
 
     $color = $cell->getStyle()->getFill()->getStartColor()->getARGB();
     $color_prefixes = [
@@ -181,7 +181,7 @@ Route::get('/livecalendar', function (Request $request) {
 Route::get('/config', function () {
     return route('calendar', [
         'excludeNKL' => true,
-        'exclude' => ['TE3', 'WF KI', 'PrITAA A', 'IT-Risk'],
+        'exclude' => ['TE3', 'WF Krypt', 'PrITAA A', 'IT-Risk'],
         'onlyNth' => ['PR-Vorträge (Ahlers)' => 2],
     ]);
 });
