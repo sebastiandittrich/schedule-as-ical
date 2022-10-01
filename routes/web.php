@@ -212,7 +212,7 @@ Route::get('/config', function () {
 Route::get('/config/sebastian', function () {
     return route('calendar', [
         'excludeNKL' => true,
-        'exclude' => ['TE3', 'WF KI', 'PrITAA A', 'IT-Risk'],
+        'exclude' => ['TE3', 'WF Krypt', 'PrITAA A', 'IT-Risk'],
         'onlyNth' => ['PR-Vorträge (Ahlers)' => 2],
     ]);
 });
