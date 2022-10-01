@@ -1,6 +1,7 @@
 <?php
 
 use Carbon\CarbonImmutable;
+use Carbon\CarbonTimeZone;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\App;
@@ -127,7 +128,7 @@ function excel_to_calendar(string $filename): Collection
                 return ['hour' => $hour, 'minute' => $minute];
             });
             foreach ([1, 2, 3, 4, 5, 6] as $weekday) {
-                $day = CarbonImmutable::createMidnightDate()->setISODate(CarbonImmutable::now()->year, $weeknumber, $weekday);
+                $day = CarbonImmutable::createMidnightDate(tz: CarbonTimeZone::create('Europe/Berlin'))->setISODate(CarbonImmutable::now()->year, $weeknumber, $weekday);
                 $cell = $sheet->getCell([2 + $weekday, $rowNumber]);
 
                 $plan->push([
@@ -193,7 +194,7 @@ Route::get('/livecalendar', function (Request $request) {
                     ->startsAt($event['start'])
                     ->endsAt($event['end'])
             ),
-            Calendar::create('Leibniz-FH dIT20 Sem 5')->withoutTimezone()
+            Calendar::create('Leibniz-FH dIT20 Sem 5')
         )
         ->toString();
 })->name('calendar');
