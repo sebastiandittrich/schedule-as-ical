@@ -96,6 +96,15 @@ function filter_by_config(array $exclude, bool $excludeNKL, array $onlyNth)
     };
 }
 
+function get_ical_event_name(array $event)
+{
+    if ($event['tags']) {
+        return "(" . collect($event['tags'])->join(', ') . ") " . $event['name'];
+    }
+
+    return $event['name'];
+}
+
 function excel_to_calendar(string $filename): Collection
 {
     $timeRegex = "/[0-9][0-9]?:[0-9][0-9]-[0-9][0-9]?:[0-9][0-9]/";
@@ -180,7 +189,7 @@ Route::get('/livecalendar', function (Request $request) {
         ))
         ->reduce(
             fn ($calendar, $event) => $calendar->event(
-                Event::create("(" . collect($event['tags'])->join(', ') . ") " . $event['name'])
+                Event::create(get_ical_event_name($event))
                     ->startsAt($event['start'])
                     ->endsAt($event['end'])
             ),
