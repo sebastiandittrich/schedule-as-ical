@@ -63,15 +63,20 @@ function get_name_from_cell(Cell $cell)
     }
 
     // Trim Newlines and trailing semicolons
-    $name = Str::of($name)->trim('\n ;')->toString();
+    $name = Str::of($name)->replace('\n', '')->trim()->trim(';')->trim()->trim(';')->toString();
 
+    return $name;
+}
+
+function get_tags_from_cell(Cell $cell)
+{
     $color = $cell->getStyle()->getFill()->getStartColor()->getARGB();
     $color_prefixes = [
-        'FFFFFF00' => '(online) '
+        'FFFFFF00' => 'online'
     ];
-    $prefix = (key_exists($color, $color_prefixes) ? $color_prefixes[$color] : "");
-
-    return ($name == "" ? "" : $prefix) . $name;
+    return [
+        ...(key_exists($color, $color_prefixes) ? [$color_prefixes[$color]] : [])
+    ];
 }
 
 function filter_by_config(array $exclude, bool $excludeNKL, array $onlyNth)
@@ -79,7 +84,6 @@ function filter_by_config(array $exclude, bool $excludeNKL, array $onlyNth)
     $count = [];
     return function ($value) use ($exclude, $excludeNKL, $onlyNth, &$count) {
         $name = $value['name'];
-        if ($name == null) return false;
         if (in_array($name, $exclude)) return false;
         if ($excludeNKL && str_starts_with($name, 'NKL')) return false;
         if (isset($onlyNth[$name])) {
@@ -92,7 +96,7 @@ function filter_by_config(array $exclude, bool $excludeNKL, array $onlyNth)
     };
 }
 
-function excel_to_calendar(string $filename)
+function excel_to_calendar(string $filename): Collection
 {
     $timeRegex = "/[0-9][0-9]?:[0-9][0-9]-[0-9][0-9]?:[0-9][0-9]/";
 
@@ -118,6 +122,7 @@ function excel_to_calendar(string $filename)
                 $cell = $sheet->getCell([2 + $weekday, $rowNumber]);
 
                 $plan->push([
+                    'tags' => get_tags_from_cell($cell),
                     'name' => get_name_from_cell($cell),
                     'start' => $day->setHour($start['hour'])->setMinute($start['minute']),
                     'end' => $day->setHour($end['hour'])->setMinute($end['minute']),
@@ -126,6 +131,7 @@ function excel_to_calendar(string $filename)
         }
     }
     return $plan
+        ->filter(fn ($event) => $event['name'] != null)
         ->sortBy('start')
         ->reduce(function ($reduced, $current) {
             $filterfunc = fn ($event) => $event['end'] == $current['start'] && $current['name'] == $event['name'];
@@ -144,14 +150,9 @@ function excel_to_calendar(string $filename)
         ->values();
 }
 
-Route::get('/livecalendar', function (Request $request) {
-    $request->validate([
-        'excludeNKL' => ['nullable', 'boolean'],
-        'exclude' => ['array'],
-        'onlyNth' => ['array']
-    ]);
-
-    $calendar = Cache::remember('download_schedule', App::isProduction() ? 60 * 60 : 0, function () {
+function get_cached_calendar(): Collection
+{
+    return Cache::remember('download_schedule', App::isProduction() ? 60 * 60 : 0, function () {
         $excel_path = storage_path('downloaded_plan.xlsx');
         if (App::isProduction()) {
             download_schedule($excel_path);
@@ -160,6 +161,16 @@ Route::get('/livecalendar', function (Request $request) {
             $excel_path,
         );
     });
+}
+
+Route::get('/livecalendar', function (Request $request) {
+    $request->validate([
+        'excludeNKL' => ['nullable', 'boolean'],
+        'exclude' => ['array'],
+        'onlyNth' => ['array']
+    ]);
+
+    $calendar = get_cached_calendar();
 
     return $calendar
         ->filter(filter_by_config(
@@ -169,7 +180,7 @@ Route::get('/livecalendar', function (Request $request) {
         ))
         ->reduce(
             fn ($calendar, $event) => $calendar->event(
-                Event::create($event['name'])
+                Event::create("(" . collect($event['tags'])->join(', ') . ") " . $event['name'])
                     ->startsAt($event['start'])
                     ->endsAt($event['end'])
             ),
@@ -178,10 +189,14 @@ Route::get('/livecalendar', function (Request $request) {
         ->toString();
 })->name('calendar');
 
+Route::post('/config', function (Request $request) {
+    return route('calendar', $request->only([
+        'excludeNKL', 'exclude', 'onlyNth'
+    ]));
+})->name('config.generate');
 Route::get('/config', function () {
-    return route('calendar', [
-        'excludeNKL' => true,
-        'exclude' => ['TE3', 'WF Krypt', 'PrITAA A', 'IT-Risk'],
-        'onlyNth' => ['PR-Vorträge (Ahlers)' => 2],
+    $classes = get_cached_calendar()->map(fn ($event) => $event['name'])->unique()->sort();
+    return view('config', [
+        'classes' => $classes
     ]);
 });
