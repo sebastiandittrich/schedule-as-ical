@@ -151,8 +151,6 @@ Route::get('/livecalendar', function (Request $request) {
         'onlyNth' => ['array']
     ]);
 
-
-
     $calendar = Cache::remember('download_schedule', App::isProduction() ? 60 * 60 : 0, function () {
         $excel_path = storage_path('downloaded_plan.xlsx');
         if (App::isProduction()) {
@@ -183,11 +181,7 @@ Route::get('/livecalendar', function (Request $request) {
 Route::get('/config', function () {
     return route('calendar', [
         'excludeNKL' => true,
-        'exclude' => ['TE3'],
+        'exclude' => ['TE3', 'WF KI', 'PrITAA A', 'IT-Risk'],
         'onlyNth' => ['PR-Vorträge (Ahlers)' => 2],
     ]);
-});
-
-Route::get('/download', function () {
-    download_schedule('');
 });
