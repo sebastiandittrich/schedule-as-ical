@@ -32,6 +32,7 @@ function sheetToMap(sheet) {
         const [colname, rowname] = cellname.match(/([A-Z]+)([0-9]+)/).slice(1);
         const [colnumber, rownumber] = [colname.charCodeAt(0) - "A".charCodeAt(0), parseInt(rowname) - 1];
         const value = sheet[cellname].v;
+        console.log(cellname, sheet[cellname]);
         values.get(rownumber).set(colnumber, value);
         return values;
     }, new lib_1.AutoMap((_) => new Map()));

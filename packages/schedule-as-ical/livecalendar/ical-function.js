@@ -23,7 +23,7 @@ async function main(args = {}) {
             nthMap.set(splitted[0], parseInt(splitted[1]));
         });
     }
-    const plan = await cache('plan', 60 * 60, async () => {
+    const plan = await cache('plan', process.env.TEST ? 0 : 60 * 60, async () => {
         await fetchFile('./__downloaded_plan.xlsx');
         return (0, excel_to_json_1.excelToJson)((0, xlsx_1.readFile)('./__downloaded_plan.xlsx'));
     });

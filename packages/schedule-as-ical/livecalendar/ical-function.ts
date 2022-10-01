@@ -24,7 +24,7 @@ export async function main(args: Partial<{excludeNKL: unknown, exclude: unknown,
             nthMap.set(splitted[0], parseInt(splitted[1]))
         })
     }
-    const plan = await cache('plan', 60*60, async () => {
+    const plan = await cache('plan', process.env.TEST ? 0 : 60*60, async () => {
         await fetchFile('./__downloaded_plan.xlsx')
 
         return excelToJson(readFile('./__downloaded_plan.xlsx'))
