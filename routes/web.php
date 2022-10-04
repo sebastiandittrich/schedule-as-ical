@@ -1,5 +1,6 @@
 <?php
 
+use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonTimeZone;
 use Illuminate\Http\Request;
@@ -64,9 +65,40 @@ function get_name_from_cell(Cell $cell)
     }
 
     // Trim Newlines and trailing semicolons
-    $name = Str::of($name)->replace('\n', '')->trim()->trim(';')->trim()->trim(';')->toString();
+    $name = normalize_name($name);
 
     return $name;
+}
+
+function parse_timerange(string $timerange)
+{
+    [$start, $end] = Str::of($timerange)
+        ->explode('-', 2)
+        ->map(fn ($time) => Str::of($time)->explode(':', 2)->map(fn ($value) => intval($value)));
+    return [
+        'start' => ['hour' => $start[0], 'minute' => $start[1]],
+        'end' => ['hour' => $end[0], 'minute' => $end[1]],
+    ];
+}
+
+function normalize_name(string $name)
+{
+    return Str::of($name)->replace('\n', '')->trim()->trim(';')->trim()->trim(';')->toString();
+}
+
+function get_special_time_from_name(string $name)
+{
+    $timeRegex = "/[0-9][0-9]?:[0-9][0-9][ ]*-[ ]*[0-9][0-9]?:[0-9][0-9]/";
+
+    $matches = Str::of($name)->matchAll($timeRegex);
+
+    if ($matches->count() == 1) {
+        return [
+            'timerange' => parse_timerange((string)$matches[0]),
+            'newname' => normalize_name(Str::of($name)->replaceMatches($timeRegex, '')->toString())
+        ];
+    }
+    return false;
 }
 
 function get_tags_from_cell(Cell $cell)
@@ -106,9 +138,14 @@ function get_ical_event_name(array $event)
     return $event['name'];
 }
 
+function set_time(CarbonImmutable $dateTime, array $time)
+{
+    return $dateTime->setHour($time['hour'])->setMinute($time['minute']);
+}
+
 function excel_to_calendar(string $filename): Collection
 {
-    $timeRegex = "/[0-9][0-9]?:[0-9][0-9]-[0-9][0-9]?:[0-9][0-9]/";
+    $timeRegex = "/[0-9][0-9]?:[0-9][0-9][ ]*-[ ]*[0-9][0-9]?:[0-9][0-9]/";
 
     $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xlsx();
     $spreadsheet = $reader->load($filename);
@@ -156,6 +193,18 @@ function excel_to_calendar(string $filename): Collection
             }
             return $reduced;
         }, collect([]))
+        ->map(function (array $event) {
+            ['timerange' => $specialTime, 'newname' => $newName] = get_special_time_from_name($event['name']);
+
+            if (!$specialTime) return $event;
+
+            return [
+                ...$event,
+                'name' => $newName,
+                'start' => set_time($event['start'], $specialTime['start']),
+                'end' => set_time($event['end'], $specialTime['end']),
+            ];
+        })
         ->filter(fn ($value) => !in_array($value['name'], ['Tag der deutschen Einheit', 'Reformationstag']))
         ->values();
 }
