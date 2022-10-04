@@ -200,9 +200,10 @@ Route::get('/livecalendar', function (Request $request) {
 })->name('calendar');
 
 Route::post('/config', function (Request $request) {
-    return route('calendar', $request->only([
-        'excludeNKL', 'exclude', 'onlyNth'
-    ]));
+    return route('calendar', [
+        'excludeNkl' => $request->boolean('excludeNKL', false),
+        'exclude' => $request->get('exclude', [])
+    ]);
 })->name('config.generate');
 Route::get('/config', function () {
     $classes = get_cached_calendar()->map(fn ($event) => $event['name'])->unique()->sort();
