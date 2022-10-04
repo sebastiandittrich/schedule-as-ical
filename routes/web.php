@@ -250,7 +250,7 @@ Route::get('/livecalendar', function (Request $request) {
 
 Route::post('/config', function (Request $request) {
     return route('calendar', [
-        'excludeNkl' => $request->boolean('excludeNKL', false),
+        'excludeNKL' => $request->boolean('excludeNKL', false),
         'exclude' => $request->get('exclude', [])
     ]);
 })->name('config.generate');
