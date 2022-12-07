@@ -30,7 +30,7 @@ use Spatie\IcalendarGenerator\Components\Event;
 function download_schedule(string $download_to)
 {
     $share_url = config('app.share_url');
-    $schedule_filename = "Leibniz-FH/Stundenpl%C3%A4ne/IT-Security/dIT%202020-23/Stundenplan%206%20Sem_dIT20.xlsx";
+    $schedule_filename = "Leibniz-FH/Stundenpl%C3%A4ne/IT-Security/dIT%202020-23/Stundenplan%206%20Sem%20dIT20.xlsx";
     $schedule_url = "https://leibnizfh-my.sharepoint.com/personal/la_leibniz-fh_de/_api/files('$schedule_filename')/\$value";
 
     $response = Http::get($share_url);
