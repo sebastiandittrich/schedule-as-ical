@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
+use Illuminate\Support\Stringable;
 use PhpOffice\PhpSpreadsheet\Cell\Cell;
 use PhpOffice\PhpSpreadsheet\RichText\RichText;
 use Spatie\IcalendarGenerator\Components\Calendar;
@@ -29,7 +30,7 @@ use Spatie\IcalendarGenerator\Components\Event;
 function download_schedule(string $download_to)
 {
     $share_url = config('app.share_url');
-    $schedule_filename = "Leibniz-FH/Stundenpl%C3%A4ne/IT-Security/dIT%202020-23/Stundenplan%205%20Sem_dIT20.xlsx";
+    $schedule_filename = "Leibniz-FH/Stundenpl%C3%A4ne/IT-Security/dIT%202020-23/Stundenplan%206%20Sem_dIT20.xlsx";
     $schedule_url = "https://leibnizfh-my.sharepoint.com/personal/la_leibniz-fh_de/_api/files('$schedule_filename')/\$value";
 
     $response = Http::get($share_url);
@@ -83,7 +84,7 @@ function parse_timerange(string $timerange)
 
 function normalize_name(string $name)
 {
-    return Str::of($name)->replace('\n', '')->trim()->trim(';')->trim()->trim(';')->toString();
+    return Str::of($name)->replace('\n', ',')->trim()->trim(';')->trim()->trim(';')->toString();
 }
 
 function get_special_time_from_name(string $name)
@@ -112,20 +113,12 @@ function get_tags_from_cell(Cell $cell)
     ];
 }
 
-function filter_by_config(array $exclude, bool $excludeNKL, array $onlyNth)
+function filter_by_config(array $classes)
 {
-    $count = [];
-    return function ($value) use ($exclude, $excludeNKL, $onlyNth, &$count) {
-        $name = $value['name'];
-        if (in_array($name, $exclude)) return false;
-        if ($excludeNKL && str_starts_with($name, 'NKL')) return false;
-        if (isset($onlyNth[$name])) {
-            $count[$name] ??= 0;
-            $count[$name]++;
-            if ($count[$name] == $onlyNth[$name]) return true;
-            return false;
-        }
-        return true;
+    return function ($value) use ($classes) {
+        $name = str($value['name']);
+        if ($name->contains($classes)) return true;
+        return false;
     };
 }
 
@@ -165,7 +158,7 @@ function excel_to_calendar(string $filename): Collection
                 return ['hour' => $hour, 'minute' => $minute];
             });
             foreach ([1, 2, 3, 4, 5, 6] as $weekday) {
-                $day = CarbonImmutable::createMidnightDate(tz: CarbonTimeZone::create('Europe/Berlin'))->setISODate(CarbonImmutable::now()->year, $weeknumber, $weekday);
+                $day = CarbonImmutable::createMidnightDate(tz: CarbonTimeZone::create('Europe/Berlin'))->setISODate(2023, $weeknumber, $weekday);
                 $cell = $sheet->getCell([2 + $weekday, $rowNumber]);
 
                 $plan->push([
@@ -205,7 +198,8 @@ function excel_to_calendar(string $filename): Collection
                 'end' => set_time($event['end'], $specialTime['end']),
             ];
         })
-        ->filter(fn ($value) => !in_array($value['name'], ['Tag der deutschen Einheit', 'Reformationstag']))
+        // Feiertage
+        ->filter(fn ($value) => !in_array($value['name'], []))
         ->values();
 }
 
@@ -224,19 +218,17 @@ function get_cached_calendar(): Collection
 
 Route::get('/livecalendar', function (Request $request) {
     $request->validate([
-        'excludeNKL' => ['nullable', 'boolean'],
-        'exclude' => ['array'],
-        'onlyNth' => ['array']
+        'classes' => ['array'],
     ]);
 
     $calendar = get_cached_calendar();
 
     return $calendar
         ->filter(filter_by_config(
-            exclude: $request->input('exclude', []),
-            excludeNKL: $request->boolean('excludeNKL', false),
-            onlyNth: array_map(fn ($value) => intval($value), $request->input('onlyNth', []))
+            classes: $request->input('classes', []),
         ))
+        // ->map(fn ($event) => $event['start']->toIsoString() . " " . get_ical_event_name($event))
+        // ->join('<br>');
         ->reduce(
             fn ($calendar, $event) => $calendar->event(
                 Event::create(get_ical_event_name($event))
@@ -250,20 +242,39 @@ Route::get('/livecalendar', function (Request $request) {
 
 Route::post('/config', function (Request $request) {
     return route('calendar', [
-        'excludeNKL' => $request->boolean('excludeNKL', false),
-        'exclude' => $request->get('exclude', [])
+        'classes' => $request->get('classes', [])
     ]);
 })->name('config.generate');
 Route::get('/config', function () {
-    $classes = get_cached_calendar()->map(fn ($event) => $event['name'])->unique()->sort();
+    $classes = get_classes();
     return view('config', [
         'classes' => $classes
     ]);
 });
-Route::get('/config/sebastian', function () {
-    return route('calendar', [
-        'excludeNKL' => true,
-        'exclude' => ['TE3', 'WF Krypt', 'PrITAA A', 'IT-Risk'],
-        'onlyNth' => ['PR-Vorträge (Ahlers)' => 2],
-    ]);
-});
+
+function extract_information(string $raw)
+{
+    $name = str($raw);
+
+    if ($name->startsWith('NKL') || $name->startsWith('Klausur')) {
+        return [$name];
+    }
+
+    // Remove parentheses like "(12-15 Uhr)"
+    $classes = $name
+        ->replaceMatches("/\(.*\)/", '')
+        ->split('/[\/\;\,\n]/')
+        ->map(fn (string $name) => normalize_name($name))
+        ->filter(fn (string $name) => $name != '');
+
+    return $classes;
+}
+
+function get_classes(): Collection
+{
+    return get_cached_calendar()
+        ->map(fn ($event) => Str::of(normalize_name($event['name'])))
+        ->flatMap(fn ($name) => extract_information($name))
+        ->unique()
+        ->sort();
+}
